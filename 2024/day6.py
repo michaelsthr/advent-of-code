@@ -1,15 +1,14 @@
 from enum import Enum
 import os
 import time
+import copy
 
 
 def print_matrix(matrix):
     for y in range(len(matrix)):
         print(*matrix[y])
 
-
-def clear():
-    os.system("clear")
+    # print("\n")
 
 
 class Mov(Enum):
@@ -29,24 +28,25 @@ class Guard:
 
         self.visit = [self.pos]
         self.visit_rot = [(self.pos, self.mov.name)]
-        self.obstacles = []
+        self.obstac = []
 
     def predict_route(self) -> int:
+        i = 0
+
         while True:
-            print_matrix(self.matrix)
-            print(f"POS: {self.pos}, MOV: {self.mov}\n")
+            # print_matrix(self.matrix)
             if self.check_end():
-                # self.visited_no_dup = list(dict.fromkeys(self.visit))
-                # self.loop_obstac_no_dup = list(dict.fromkeys(self.loop_obstac))
-                return self.visit
+                return self.visit, self.obstac
             if self.check_obstacle("#"):
                 self.rotate()
-            # if self.check_loop(matrix):
-            # self.loop_obstac.append(self.next_pos())
-            # print(f"{self.next_pos()} is a possible loop location!")
-            self.move()
-            time.sleep(0.5)
-            clear()
+            if self.check_loop(i):
+                self.obstac.append(self.next_pos())
+            self.move("X")
+            # time.sleep(0.4)
+            # os.system("clear")
+            i += 1
+            # print(self.pos)
+            print("FINSIHED:", i)
 
     def find_pos(self):
         for y in range(len(matrix)):
@@ -54,11 +54,14 @@ class Guard:
                 if self.matrix[y][x] == "^":
                     return y, x
 
-    def move(self):
-        matrix[self.pos[0]][self.pos[1]] = "X"
+    def move(self, c):
+        self.matrix[self.pos[0]][self.pos[1]] = c
         self.pos = self.next_pos()
-        matrix[self.pos[0]][self.pos[1]] = self.mov.value[2]
+        y, x = self.pos
+        # print(self.pos)
+        self.matrix[y][x] = self.mov.value[2]
         self.visit.append(self.pos)
+        self.visit_rot.append((self.pos, self.mov.name))
 
     def rotate(self):
         if self.mov == Mov.UP:
@@ -71,9 +74,9 @@ class Guard:
             tmp = Mov.UP
         self.mov = tmp
 
-    def check_obstacle(self, obstacle):
+    def check_obstacle(self, obstacle: str):
         y, x = self.next_pos()
-        if matrix[y][x] == obstacle:
+        if self.matrix[y][x] == obstacle:
             return True
         return False
 
@@ -86,30 +89,67 @@ class Guard:
     def next_pos(self):
         return self.pos[0] + self.mov.value[0], self.pos[1] + self.mov.value[1]
 
-    def check_loop(self):
+    def check_loop(self, i):
         """Place obstacle in front and check if a loop is possible"""
-        self.tmp_rot, self.tmp_pos = self.mov, self.pos
-        c_matrix = matrix.copy()
+        tmp_mov = self.mov
+        tmp_pos = self.pos
+        tmp_matrix = copy.deepcopy(self.matrix)
+        tmp_visit = copy.copy(self.visit)
+        tmp_visit_rot = copy.copy(self.visit_rot)
+
         y, x = self.next_pos()
-        s = list(c_matrix[y])
-        s[x] = "O"
-        c_matrix[y] = "".join(s)
-        for i in c_matrix:
-            print(i)
-        print("")
-        while self.check_end(c_matrix):
-            if (self.pos, self.mov.name) in self.visited_and_rot:
-                return True
-            self.visited_and_rot.append((self.pos, self.mov.name))
-            if not self.check_obstacle(c_matrix, "O"):
+        if (y, x) in tmp_visit:
+            return False
+        else:
+            self.matrix[y][x] = "#"
+
+        loop = list()
+        while not self.check_end():
+            # print("loop", i, self.pos)
+            if self.check_obstacle("#"):
                 self.rotate()
-            self.move(c_matrix)
-        self.mov, self.pos = self.tmp_rot, self.tmp_pos
+                continue
+                # faster move func
+            self.move("r")
+
+            self.visit.append(self.pos)
+            self.visit_rot.append((self.pos, self.mov.name))
+            # print(self.loop)
+            # print((self.pos, self.mov.name))
+
+            if (self.pos, self.mov.name) in tmp_visit_rot:
+                self.visit = tmp_visit
+                self.visit_rot = tmp_visit_rot
+                self.matrix = tmp_matrix
+                self.pos = tmp_pos
+                self.mov = tmp_mov
+                # print("true")
+                return True
+            if (self.pos, self.mov.name) in loop:
+                self.visit = tmp_visit
+                self.visit_rot = tmp_visit_rot
+                self.matrix = tmp_matrix
+                self.pos = tmp_pos
+                self.mov = tmp_mov
+                # print("true")
+                return True
+            loop.append((self.pos, self.mov.name))
+            # print_matrix(self.matrix)
+            # time.sleep(1)
+            # os.system("clear")
+            # print("end")
+
+        self.visit = tmp_visit
+        self.visit_rot = tmp_visit_rot
+        self.matrix = tmp_matrix
+        self.pos = tmp_pos
+        self.mov = tmp_mov
+
         return False
 
 
 if __name__ == "__main__":
-    with open("2024/temp/input6e.txt") as f:
+    with open("2024/temp/input6.txt") as f:
         matrix = f.read().splitlines()
 
     # matrix[y][x]
@@ -117,7 +157,8 @@ if __name__ == "__main__":
         matrix[y] = list(matrix[y])
 
     g = Guard(matrix)
-    route = g.predict_route()
+    route, obstac = g.predict_route()
     len_route = len(list(dict.fromkeys(route)))
+    len_obstac = len(list(dict.fromkeys(obstac)))
     print(f"Distinct positions: {len_route}")
-    # print(f"Possible positions for obstacle loop {obstac_len}")
+    print(f"Possible positions for obstacle loop {len_obstac}")
