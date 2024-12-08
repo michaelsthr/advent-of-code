@@ -4,7 +4,7 @@ import time
 from loguru import logger
 
 
-def validate_equation(result, values):
+def validate_equation_mul_plus(result, values, concat):
     solutions = list()
     solutions += [values[0]]
     i = 1
@@ -16,8 +16,10 @@ def validate_equation(result, values):
         for solution in solutions:
             plus = solution + next_value
             mul = solution * next_value
+            if concat:
+                tmp_solutions += [int(str(solution) + str(next_value))]
             tmp_solutions += [plus, mul]
-            
+
         solutions = tmp_solutions
         i += 1
 
@@ -31,18 +33,30 @@ if __name__ == "__main__":
         equation_lines = list(f.read().splitlines())
 
     sums = 0
+    sums_with_concat = 0
     for equat in equation_lines:
         equat = equat.split(" ")
         result = int(re.findall(r"\d+", equat[0])[0])
         values = [int(x) for x in equat[1:]]
+        a, b = False, False
 
-        if validate_equation(result, values):
+        if validate_equation_mul_plus(result, values, concat=False):
             sums += result
-            logger.success("")
-            print("RESULT:", result, "VALUES:", values)
-            continue
+            a = True
 
-        logger.error("")
-        print("RESULT:", result, "VALUES:", values)
+        if validate_equation_mul_plus(result, values, concat=True):
+            sums_with_concat += result
+            b = True
+
+        if a is True:
+            logger.success("")
+            print("N-RESULT:", result, "VALUES:", values)
+        if b is True:
+            logger.success("")
+            print("C-RESULT:", result, "VALUES:", values)
+        if a is False and b is False:
+            logger.error("")
+            print("RESULT:", result, "VALUES:", values)
 
     print("sum:", sums)
+    print("sum with concat:", sums_with_concat)
