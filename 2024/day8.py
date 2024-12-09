@@ -2,6 +2,7 @@
 # --> map the anodes on each side
 
 # difference between pos?
+import copy
 
 
 class Antenna:
@@ -15,13 +16,13 @@ class Antenna:
         return f"{self.symbol}: {self.vec} --> y:{self.y}, x:{self.x}"
 
 
-def print_matrix(matrix):
+def print_grid(grid):
     print("  ", end="")
-    for x in range(len(matrix[0])):
+    for x in range(len(grid[0])):
         print(f"{x}", end=" ")
     print("\n", end="")
-    for y in range(len(matrix)):
-        print(y, *matrix[y])
+    for y in range(len(grid)):
+        print(y, *grid[y])
     print("\n")
 
 
@@ -34,42 +35,47 @@ def sub(v1: tuple, v2: tuple):
 
 
 if __name__ == "__main__":
-    with open("2024/temp/input8e2.txt") as x:
-        matrix = list(x.read().splitlines())
+    with open("2024/temp/input8.txt") as x:
+        grid = list(x.read().splitlines())
 
     antennas: list[Antenna] = list()
+    symbols = set()
 
-    for y in range(len(matrix)):
-        matrix[y] = list(matrix[y])
-        for x in range(len(matrix[y])):
-            if matrix[y][x] != ".":
-                a = Antenna(matrix[y][x], (y, x))
+    for y in range(len(grid)):
+        grid[y] = list(grid[y])
+        for x in range(len(grid[y])):
+            if grid[y][x] != ".":
+                a = Antenna(grid[y][x], (y, x))
                 antennas.append(a)
+                symbols.add(a.symbol)
                 print(a)
 
-    for a in antennas:
-        if a.symbol == "b":
-            b = a
-            print("b ant:", b)
+    # [a, c, v, a, c, a, c, k] --> [[a,a,a],[c,c,c],[v],[k]]
+    grouped_antennas = list()
+    for s in symbols:
+        tmp = []
+        for a in antennas:
+            if s == a.symbol:
+                tmp.append(a)
+        if len(tmp) != 0:
+            grouped_antennas.append(tmp)
 
-    for a in antennas:
-        if a.symbol != "b":
-            y, x = add(a.vec, sub(a.vec, b.vec))
-            print("vec", (y, x))
-            matrix[y][x] = "#"
+    unique_loc = list()
 
-    # diff1 = abs(antennas[0].pos[0] - antennas[1].pos[0])
-    # diff2 = abs(antennas[0].pos[1] - antennas[1].pos[1])
+    for antenna in grouped_antennas:
+        for i, a in enumerate(antenna):
+            tmp_antennas = copy.deepcopy(antenna)
+            tmp_antennas.pop(i)
+            for b in tmp_antennas:
+                y, x = add(b.vec, sub(b.vec, a.vec))
+                # print(f"{a.symbol}: {(y, x)} = add({b.vec}, sub({b.vec}, {a.vec}))")
+                if y >= 0 and x >= 0 and y < len(grid) and x < len(grid[0]):
+                    # print("add antinode", (y, x))
+                    unique_loc.append((y, x))
+                    grid[y][x] = "#"
+                # else:
+                # print("skip antinode:", (y, x))
 
-    # new_pos1 = antennas[1].pos[0] + diff1
-    # new_pos2 = antennas[1].pos[1] + diff2
-
-    # new_pos1b = antennas[0].pos[0] - diff1
-    # new_pos2b = antennas[0].pos[1] - diff2
-
-    # matriy[new_pos1][new_pos2] = "#"
-    # matriy[new_pos1b][new_pos2b] = "#"
-
-    # print((diff1, diff2))
-
-    print_matrix(matrix)
+    sum_unique_loc = len(set(unique_loc))
+    print_grid(grid)
+    print("Unique locations containing antinodes:", sum_unique_loc)
