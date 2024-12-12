@@ -25,14 +25,16 @@ def bfs(start, grid):
 
     trail_head_count = 0
     while queue:
+        print(trail_head_count)
         new_pos = queue.pop(-1)
         y, x = new_pos
         algo_grid[y][x] = grid[y][x]
         printg(algo_grid)
-        time.sleep(0.2)
+        # time.sleep(0.1)
         os.system("clear")
         if grid[new_pos[0]][new_pos[1]] == 9:
             trail_head_count += 1
+        visited.append(new_pos)
         neighbours = find_next(new_pos, visited, grid)
         queue.extend(neighbours)
     return trail_head_count
@@ -47,16 +49,16 @@ def find_next(pos: tuple, visited: list, grid: list):
     up, down = y - 1, y + 1
     left, right = x - 1, x + 1
 
-    if up >= 0 and grid[up][x] == greater_pos and up not in visited:
+    if up >= 0 and grid[up][x] == greater_pos and (up, x) not in visited:
         neighbours.append((up, x))
 
-    if down < len(grid) and grid[down][x] == greater_pos and down not in visited:
+    if down < len(grid) and grid[down][x] == greater_pos and (down, x) not in visited:
         neighbours.append((down, x))
 
-    if left >= 0 and grid[y][left] == greater_pos and left not in visited:
+    if left >= 0 and grid[y][left] == greater_pos and (y, left) not in visited:
         neighbours.append((y, left))
 
-    if right < len(grid[0]) and grid[y][right] == greater_pos and right not in visited:
+    if right < len(grid[0]) and grid[y][right] == greater_pos and (y, right) not in visited:
         neighbours.append((y, right))
 
     return neighbours
