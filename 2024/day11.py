@@ -1,21 +1,28 @@
 import re
+import functools
+
+cache = {}
 
 
-def blink(stones: list):
-    new_stones = list()
-    for i, stone in enumerate(stones):
-        stone = stones[i]
+@functools.cache
+def blink(stone, i):
+    result = 0
+
+    if i == 0:
+        return 1
+
+    if stone == 0:
+        result += blink(1, i-1)
+    elif len(str(stone)) % 2 == 0:
         tmp = str(stone)
-        if stone == 0:
-            new_stones.append(1)
-        elif len(tmp) % 2 == 0:
-            n = len(tmp) // 2
-            left = tmp[:-n]
-            right = tmp[-n:]
-            new_stones.extend([int(left), int(right)])
-        else:
-            new_stones.append(stone * 2024)
-    return new_stones
+        n = len(tmp) // 2
+        left = tmp[:-n]
+        right = tmp[-n:]
+        result += blink(int(left), i-1) + blink(int(right), i-1)
+    else:
+        result += blink(stone * 2024, i-1)
+
+    return result
 
 
 if __name__ == "__main__":
@@ -25,8 +32,9 @@ if __name__ == "__main__":
     stones = re.findall(r"\d+", data)
     stones = [int(x) for x in stones]
 
-    for i in range(25):
-        stones = blink(stones)
-        # print(i, *stones)
+    count = 0
+    print("init count", count)
+    for stone in stones:
+        count += blink(stone, 75)
 
-    print(f"They are {len(stones)} stones")
+    print(f"They are {count} stones")
